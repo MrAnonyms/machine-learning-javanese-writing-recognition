@@ -155,18 +155,15 @@ page = st.sidebar.radio(
     "What do you want to explore?", ["Page", "Classification", "Recognition", "How it works"]
 )
 
-y = 8
-model_choice = joblib.load("models/svm_model.joblib")
-scaler = joblib.load("models/svm_scaler.joblib")
-
-
-def ekstrak_fitur_hog(img, ukuran=(64, 64)):
+def ekstrak_fitur_hog(img, ukuran=(64, 64), pixels_per_cell=(8, 8)):
     if len(img.shape) == 3:
         img = rgb2gray(img)
     img_resized = resize(img, ukuran)
+    
+    # The pixels_per_cell parameter is now used here
     fitur, _ = hog(
         img_resized,
-        pixels_per_cell=(8, 8),
+        pixels_per_cell=pixels_per_cell,
         cells_per_block=(2, 2),
         orientations=9,
         block_norm="L2-Hys",
@@ -190,14 +187,21 @@ Enjoy exploring and preserving this cultural heritage through technology!
 """
     )
 
-
-
 elif page == "Classification":
-    background_img = Image.open(r"assets\sample_ra.png")
-    col1, col2 = st.columns(2)
+    st.subheader("Draw an Aksara Jawa Character")
+
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col1:
-        st.subheader("Draw the character!")
+        st.write("Sample Character:")
+        try:
+            background_img = Image.open(r"assets/sample_ra.png")
+            st.image(background_img, width=160)
+        except FileNotFoundError:
+            st.warning("Sample image not found. Check path 'assets/sample_ra.png'")
+
+    with col2:
+        st.write("Draw inside the box:")
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1)",
             stroke_width=10,
@@ -209,35 +213,63 @@ elif page == "Classification":
             drawing_mode="freedraw",
             key="canvas",
         )
+    
+    with col3:
+        st.write("Preprocessed Image:")
+        preprocessed_image_placeholder = st.empty()
 
-    with col2:
-        st.subheader("Sample word :")
-        st.image(background_img, width=160)
-
-    # Inisialisasi gambar
-    image = None
-    image = Image.fromarray((canvas_result.image_data[:, :, 0:3]).astype(np.uint8))
-
-    if image is not None:
+    if canvas_result.image_data is not None and np.sum(canvas_result.image_data) > 0:
+        image = Image.fromarray((canvas_result.image_data[:, :, :3]).astype(np.uint8))
         gray = image.convert("L")
-        img_array = np.array(gray)
+        thresholded = gray.point(lambda x: 0 if x < 128 else 255, 'L')
 
-        thresholded = gray.point(lambda x: 0 if x < 128 else 255)
+        tab1, tab2 = st.tabs(["Low-Resolution Model (8x8)", "High-Resolution Model (4x4)"])
+        with tab1:
+            size_low = (42, 42)
+            resized_low = thresholded.resize(size_low)
+            normalized_low = np.array(resized_low) / 255.0
+            
+            preprocessed_image_placeholder.image(
+                normalized_low, 
+                caption=f"Low-Res Preview ({size_low[0]}x{size_low[1]})", 
+                width=200
+            )
 
-        size = (42, 42)
-        resized = thresholded.resize(size)
+            st.info("Using Model 1: HOG `pixels_per_cell=(8,8)`. Accuracy: 87%")
+            
+            hog_features = ekstrak_fitur_hog(normalized_low, pixels_per_cell=(8, 8)).reshape(1, -1)
+            
+            if st.button("Predict with Low-Res Model"):
+                model_8x8 = joblib.load("models/svm_model.joblib")
+                scaler_8x8 = joblib.load("models/svm_scaler.joblib")
+                scaled_input = scaler_8x8.transform(hog_features)
+                prediction = model_8x8.predict(scaled_input)[0]
+                st.success(f"Low-Res Model Predicted: **{prediction}**")
 
-        normalized = np.array(resized) / 255.0
-        input_array = ekstrak_fitur_hog(normalized).reshape(1, -1)
+        with tab2:
+            size_high = (90, 90)
+            resized_high = thresholded.resize(size_high)
+            normalized_high = np.array(resized_high) / 255.0
 
-        st.image(normalized, caption="Preprocessed Image", width=200, clamp=True)
+            preprocessed_image_placeholder.image(
+                normalized_high, 
+                caption=f"High-Res Preview ({size_high[0]}x{size_high[1]})", 
+                width=200
+            )
 
-        if st.button("Predict"):
-            scaled_input = scaler.transform(input_array)
-            prediction = model_choice.predict(scaled_input)[0]
-            st.success(f"The model predicted: **{prediction}**")
+            st.info("Using Model 2: HOG `pixels_per_cell=(4,4)`. Accuracy: 83%")
+
+            hog_features = ekstrak_fitur_hog(normalized_high, pixels_per_cell=(4, 4)).reshape(1, -1)
+
+            if st.button("Predict with High-Res Model"):
+                model_4x4 = joblib.load("models/svm_model_highres.joblib")
+                scaler_4x4 = joblib.load("models/svm_scaler_highres.joblib")
+                scaled_input = scaler_4x4.transform(hog_features)
+                prediction = model_4x4.predict(scaled_input)[0]
+                st.success(f"High-Res Model Predicted: **{prediction}**")
     else:
-        st.info("Draw something or upload an image first.")
+        st.info("Draw a character in the canvas to see the preprocessed image and get a prediction.")
+
 
 elif page == "Recognition":
     st.subheader("Upload an image of handwritten Aksara Jawa")
@@ -248,20 +280,43 @@ elif page == "Recognition":
         image = Image.open(uploaded_file).convert("L")
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
+        # Pre-process the uploaded image
         thresholded = image.point(lambda x: 0 if x < 128 else 255)
-
         size = (42, 42)
         resized = thresholded.resize(size)
-
         normalized = np.array(resized) / 255.0
-        input_array = ekstrak_fitur_hog(normalized).reshape(1, -1)
+        
+        # --- Model Selection Tabs ---
+        tab1, tab2 = st.tabs(["Low-Resolution Model (8x8)", "High-Resolution Model (4x4)"])
+        
+        # --- Logic for Low-Resolution Model Tab ---
+        with tab1:
+            st.info("Using Model 1: HOG with `pixels_per_cell=(8,8)`. Final Test Accuracy: 87% [cite: 658]")
+            
+            # Extract features and predict
+            hog_features = ekstrak_fitur_hog(normalized, pixels_per_cell=(8, 8)).reshape(1, -1)
+            model_8x8 = joblib.load("models/svm_model_8x8.joblib")
+            scaler_8x8 = joblib.load("models/svm_scaler_8x8.joblib")
+            scaled_input = scaler_8x8.transform(hog_features)
+            prediction = model_8x8.predict(scaled_input)[0]
+            st.success(f"Low-Res Model Predicted: **{prediction}**")
 
-        # Prediksi
-        scaled_input = scaler.transform(input_array)
-        prediction = model_choice.predict(scaled_input)[0]
-        st.success(f"The model predicted: **{prediction}**")
+        # --- Logic for High-Resolution Model Tab ---
+        with tab2:
+            st.info("Using Model 2: HOG with `pixels_per_cell=(4,4)`. Final Test Accuracy: 83% [cite: 658]")
+
+            # Extract features and predict
+            hog_features = ekstrak_fitur_hog(normalized, pixels_per_cell=(4, 4)).reshape(1, -1)
+            model_4x4 = joblib.load("models/svm_model_4x4.joblib")
+            scaler_4x4 = joblib.load("models/svm_scaler_4x4.joblib")
+            scaled_input = scaler_4x4.transform(hog_features)
+            prediction = model_4x4.predict(scaled_input)[0]
+            st.success(f"High-Res Model Predicted: **{prediction}**")
+
     else:
         st.info("Please upload an image to begin recognition.")
+
+
 
 elif page == "How it works":
     st.markdown(
