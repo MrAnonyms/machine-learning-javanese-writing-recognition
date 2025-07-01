@@ -380,11 +380,11 @@ elif page == "How it works":
 
         with col2:
             st.markdown("##### Confusion Matrix")
-            st.image("assets\low_res_test_conf.jpg", caption="Confusion Matrix for Model 1 (8x8)")
+            st.image("assets/low_res_test_conf.jpg", caption="Confusion Matrix for Model 1 (8x8)")
 
         with col3:
             st.markdown("##### Classification Report")
-            st.image("assets\low_res_test_class.jpg", caption="Classification Report for Model 1 (8x8)")
+            st.image("assets/low_res_test_class.jpg", caption="Classification Report for Model 1 (8x8)")
 
     with tab2:
         st.markdown("#### Final Performance on the Test Set (HOG 4x4)")
@@ -397,9 +397,9 @@ elif page == "How it works":
 
         with col2:
             st.markdown("##### Confusion Matrix")
-            st.image("assets\high_res_test_conf.jpg", caption="Confusion Matrix for Model 2 (4x4)")
+            st.image("assets/high_res_test_conf.jpg", caption="Confusion Matrix for Model 2 (4x4)")
         
         with col3:
             st.markdown("##### Classification Report")
-            st.image("assets\high_res_test_class.jpg", caption="Classification Report for Model 2 (4x4)")
+            st.image("assets/high_res_test_class.jpg", caption="Classification Report for Model 2 (4x4)")
 
