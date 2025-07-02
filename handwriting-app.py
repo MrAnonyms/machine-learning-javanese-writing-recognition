@@ -214,9 +214,9 @@ elif page == "Classification":
             col1_low, col2_low = st.columns(2)
 
             with col1_low:
-                st.write("Sample Character:")
+                st.write("Aksara Jawa:")
                 try:
-                    background_img = Image.open(r"assets/sample_ra.png")
+                    background_img = Image.open(r"assets/aksara.png")
                     st.image(background_img, width=160)
                 except FileNotFoundError:
                     st.warning("Sample image not found.")
@@ -247,9 +247,9 @@ elif page == "Classification":
             col1_high, col2_high = st.columns(2)
 
             with col1_high:
-                st.write("Sample Character:")
+                st.write("Aksara Jawa:")
                 try:
-                    background_img = Image.open(r"assets/sample_ra.png")
+                    background_img = Image.open(r"assets/aksara.png")
                     st.image(background_img, width=160)
                 except FileNotFoundError:
                     st.warning("Sample image not found.")
