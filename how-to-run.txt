@@ -1,0 +1,14 @@
+1. please install the prerequisite requirement provided in requirement.txt
+
+2. make sure the models in models folder is available, due to the file size limitation, our model is removed from the Binusmaya submission file, we will instead upload it in onedrive and github
+
+github : https://github.com/MrAnonyms/machine-learning-javanese-writing-recognition
+onedrive : https://binusianorg-my.sharepoint.com/personal/raymond_setiawan001_binus_ac_id/_layouts/15/guestaccess.aspx?share=Es983J1eZzdGst8CT-gWfSABiBM5H2db9MbsOMgzw2a8oQ&e=ZI7WYN
+
+*please note that we decide to provide low res option for the file download in one drive, this will significanly reduce the file size, but you can only use the low res prediction model.
+
+3. run the model in cmd by using command "streamlit run handwriting-app.py"
+
+4. in the classification page, you can hand draw a javanese word by yourself to identify which word is it.
+
+5. in the recognition page, you can upload an image to identify which word is in the images
