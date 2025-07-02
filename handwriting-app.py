@@ -285,7 +285,7 @@ elif page == "Recognition":
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("L")
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
 
         thresholded = image.point(lambda x: 0 if x < 128 else 255)
         size = (42, 42)
@@ -298,8 +298,8 @@ elif page == "Recognition":
             st.info("Using Model 1: HOG with `pixels_per_cell=(8,8)`. Final Test Accuracy: 87% [cite: 658]")
             
             hog_features = ekstrak_fitur_hog(normalized, pixels_per_cell=(8, 8)).reshape(1, -1)
-            model_8x8 = joblib.load("models/svm_model_8x8.joblib")
-            scaler_8x8 = joblib.load("models/svm_scaler_8x8.joblib")
+            model_8x8 = joblib.load("models/svm_model.joblib")
+            scaler_8x8 = joblib.load("models/svm_scaler.joblib")
             scaled_input = scaler_8x8.transform(hog_features)
             prediction = model_8x8.predict(scaled_input)[0]
             st.success(f"Low-Res Model Predicted: **{prediction}**")
@@ -308,8 +308,8 @@ elif page == "Recognition":
             st.info("Using Model 2: HOG with `pixels_per_cell=(4,4)`. Final Test Accuracy: 83% [cite: 658]")
 
             hog_features = ekstrak_fitur_hog(normalized, pixels_per_cell=(4, 4)).reshape(1, -1)
-            model_4x4 = joblib.load("models/svm_model_4x4.joblib")
-            scaler_4x4 = joblib.load("models/svm_scaler_4x4.joblib")
+            model_4x4 = joblib.load("models/svm_model_highres.joblib")
+            scaler_4x4 = joblib.load("models/svm_scaler_highres.joblib")
             scaled_input = scaler_4x4.transform(hog_features)
             prediction = model_4x4.predict(scaled_input)[0]
             st.success(f"High-Res Model Predicted: **{prediction}**")
